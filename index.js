@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const express = require('express');
 const cors = require('cors');
@@ -26,12 +26,43 @@ async function run() {
         await client.connect();
 
         const carProjectCollection = client.db('carProject').collection('services');
+        const bookingCollection = client.db('carProject').collection('booking');
 
         app.get('/services', async (req, res) => {
-             const cursor = carProjectCollection.find();
-             const result = await cursor.toArray();
-             res.send(result)
+            const cursor = carProjectCollection.find();
+            const result = await cursor.toArray();
+            res.send(result)
         })
+        app.get('/checkout/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id)};
+            const options = {
+                projection: { title: 1, img: 1, price: 1, service_id: 1},
+              };
+          
+            const result = await carProjectCollection.findOne(query, options);
+            res.send(result);
+        })
+
+        // booking section server
+
+        app.get('/booking', async(req, res) => {
+            console.log(req.query.email);
+            let query = {};
+            if(req.query?.email){
+                query = {email: req.query.email}
+            }
+            const result = await bookingCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        app.post('/booking', async(req, res) => {
+            const booking = req.body;
+            const result = await bookingCollection.insertOne(booking);
+            res.send(result)
+
+        })
+
 
 
         // Send a ping to confirm a successful connection
